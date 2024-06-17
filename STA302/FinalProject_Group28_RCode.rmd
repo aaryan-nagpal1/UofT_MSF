@@ -1,0 +1,613 @@
+#STA302 Project Research Proposal and Data Introduction
+#Group 28 - Aaryan Nagpal, Anya Pedersen, Devyani Chandra
+packageurl <- "https://cran.r-project.org/src/contrib/Archive/pbkrtest/pbkrtest_0.4-4.tar.gz" 
+install.packages(packageurl, repos=NULL, type="source")
+install.packages("car", dependencies=TRUE)
+install.packages("ltm")
+library(car)
+library("scales")
+library(MASS)
+
+## Defining functions to plot for assessing model assumptions.
+checkAssumptions <- function(model, pairs_columns){
+        #obtaining fitted and residual values from the model fitted
+        y_hat <- fitted(model)
+        e_hat <- resid(model)
+        
+## Check Multi-linear Regression (MLR) Condition # 1 - Actual linear relationship
+        par(mfrow=c(1,1))
+        plot(x = data_no_NA$rmssd, y = y_hat   , main="Fitted vs RMSSD", xlab="RMSSD",
+             ylab="Fitted")
+        abline(a=1, b = 1)
+        
+# When checking the multilinear regression conditional mean response, we identify a promenent diagonal scatter, idicating violation of this assumtion. We therefore cannot use the residual plots to accuratly identify violations in the data set. Possible areas of concern are the four points that are present at a much higher Fitted value at lo
+        
+## Check MLR # 2 - Only linear or no relationships between predictors
+# Plotting the variables against each other in the form of pairs for all possible combinations
+pairs(data_no_NA[pairs_columns], sub="Plot to check the second condition for Multilinear Regression.")
+# There are no curves or other non-linear patters with in the relationships between predictors. We therefore state that conditional mean predictors holds for this data set.
+        
+## Plotting Residuals vs Predictors
+        par(mfrow=c(2,2))
+        plot(x = data_no_NA$spo2    , y = e_hat   , main="Residual vs SpO2", xlab="SpO2",
+             ylab="Residuals")
+        plot(x = data_no_NA$sleep_points_percentage    , y = e_hat   , main="Residual vs Sleep Points Percentage", xlab="Sleep Points Percentage",
+             ylab="Residuals")
+        plot(x = data_no_NA$exertion_points_percentage   , y = e_hat   , main="Residual vs Exertion Points Percentage", xlab="Exertion Points Percentage",
+             ylab="Residuals")
+        plot(x = data_no_NA$calories    , y = e_hat   , main="Residual vs Calories", xlab="Calories",
+             ylab="Residuals")
+        par(mfrow=c(1,1))
+        boxplot(e_hat *  data_no_NA$gender, e_hat *  !data_no_NA$gender , main="Residual vs Gender", xlab="Gender",
+                ylab="Residuals", names = c("Male", "Female"))
+        par(mfrow=c(1,1))
+        #plotting the residuals vs fitted graph for the model that was created
+        plot(x = y_hat    , y = e_hat   , main="Residual vs Fitted", xlab="Fitted",
+             ylab="Residuals")
+        #creating a QQ plot using the residuals from the model created
+        qqnorm(e_hat)
+        qqline(e_hat)
+        
+}
+
+plotColorResiduals <- function(model){
+#Creating a plots with colour to depict categorical predictor - Gender.
+        y_hat <- fitted(model)
+        e_hat <- resid(model)
+        par(mfrow=c(2,2))
+# Residuals vs SpO2
+        plot(x = 1,
+             type = "n",
+             xlim = c(85, 105), 
+             ylim = c(-70,70),
+             pch = 16,
+             xlab = "SpO2", 
+             ylab = "Residuals",
+             main = "Residuals vs SpO2")
+        
+# Add points for male data
+        points(x = data_no_NA$spo2[data_no_NA$gender == 1],
+               y = e_hat[data_no_NA$gender == 1],
+               pch = 16,
+               col = alpha("steelblue3",.4)
+        )
+# Add points for female data
+        points(x = data_no_NA$spo2[data_no_NA$gender == 0],
+               y = e_hat[data_no_NA$gender == 0],
+               pch = 16,
+               col = alpha("coral2", .4))
+        legend(x=85,y=65,col=c("steelblue3", "coral2"), legend=c("Male", "Female"),pch=c(1,1))
+        
+        
+# Residuals vs Sleep Points Percentage (SPP)
+        plot(x = 1,
+             type = "n",
+             xlim = c(0, 1.5), 
+             ylim = c(-70,70),
+             pch = 16,
+             xlab = "Sleep Points Percentage", 
+             ylab = "Residuals",
+             main = "Residuals vs Sleep Points Percentage")
+        
+# Add points for male data
+        points(x = data_no_NA$sleep_points_percentage[data_no_NA$gender == 1],
+               y = e_hat[data_no_NA$gender == 1],
+               pch = 16,
+               col = alpha("steelblue3",.4)
+        )
+# Add points for female data
+        points(x = data_no_NA$sleep_points_percentage[data_no_NA$gender == 0],
+               y = e_hat[data_no_NA$gender == 0],
+               pch = 16,
+               col = alpha("coral2", .4))
+        legend(x=0,y=65,col=c("steelblue3", "coral2"), legend=c("Male", "Female"),pch=c(1,1))
+        
+        
+# Plotting Residuals vs Exertion Points Percentage (EPP)
+        plot(x = 1,
+             type = "n",
+             xlim = c(0, 1.5), 
+             ylim = c(-70,70),
+             pch = 16,
+             xlab = "Exertion Points Percentage", 
+             ylab = "Residuals",
+             main = "Residuals vs Exertion Points Percentage")
+        
+# Add points for male data
+        points(x = data_no_NA$exertion_points_percentage[data_no_NA$gender == 1],
+               y = e_hat[data_no_NA$gender == 1],
+               pch = 16,
+               col = alpha("steelblue3",.4)
+        )
+# Add points for female data
+        points(x = data_no_NA$exertion_points_percentage[data_no_NA$gender == 0],
+               y = e_hat[data_no_NA$gender == 0],
+               pch = 16,
+               col = alpha("coral2", .4))
+        legend(x=0,y=65,col=c("steelblue3", "coral2"), legend=c("Male", "Female"),pch=c(1,1))
+        
+        
+        
+# Residuals vs Calories
+        plot(x = 1,
+             type = "n",
+             xlim = c(0, 7000), 
+             ylim = c(-70,70),
+             pch = 16,
+             xlab = "Calories", 
+             ylab = "Residuals",
+             main = "Residuals vs Calories")
+        
+# Add points for male data
+        points(x = data_no_NA$calories[data_no_NA$gender == 1],
+               y = e_hat[data_no_NA$gender == 1],
+               pch = 16,
+               col = alpha("steelblue3",.4)
+        )
+# Add points for female data
+        points(x = data_no_NA$calories[data_no_NA$gender == 0],
+               y = e_hat[data_no_NA$gender == 0],
+               pch = 16,
+               col = alpha("coral2", .4))
+        legend(x=5000,y=68,col=c("steelblue3", "coral2"), legend=c("Male", "Female"),pch=c(1,1))
+        par(mfrow=c(1,1))
+# Residuals vs Predicted Response
+        plot(x = 1,
+             type = "n",
+             xlim = c(0, 100), 
+             ylim = c(-70,70),
+             pch = 16,
+             xlab = "y_hat", 
+             ylab = "Residuals",
+             main = "Residuals vs y_hat")
+        
+# Add points for male data
+        points(x = y_hat[data_no_NA$gender == 1],
+               y = e_hat[data_no_NA$gender == 1],
+               pch = 16,
+               col = alpha("steelblue3",.4)
+        )
+# Add points for female data
+        points(x = y_hat[data_no_NA$gender == 0],
+               y = e_hat[data_no_NA$gender == 0],
+               pch = 16,
+               col = alpha("coral2", .4))
+        legend(x=70,y=65,col=c("steelblue3", "coral2"), legend=c("Male", "Female"),pch=c(1,1))
+        
+        
+}
+
+
+## Loading Data Set
+#storing the dataset in a variable named data
+data <- read.csv("daily_fitbit_sema_df_unprocessed.csv")
+
+
+# Cleaning Data
+# Creating a subset of the entire dataset that just contains the mean response and 5 predictor variables
+data_new <- subset(as.data.frame(data), 
+                   select = c(rmssd, sleep_points_percentage, exertion_points_percentage, gender, calories, spo2))
+data_new <- data_new[complete.cases(data_new),]
+
+# Removing zero entries from exertion points percentage and sleep points percentage
+data_new <- data_new[data_new$exertion_points_percentage > 0,]
+data_new <- data_new[data_new$sleep_points_percentage > 0, ]
+# Cleaning and processing the dataset by removing all values that are NA
+data_no_NA <- ( na.omit(data_new))
+
+
+# Encoding our categorical variable by replacing such that M = 1 and F = 0
+data_no_NA$gender[which(data_no_NA$gender =="FEMALE")] <- 0 
+data_no_NA$gender[which(data_no_NA$gender =="MALE")] <- 1
+data_no_NA <- lapply(data_no_NA, as.numeric)
+
+
+# Caving the cleaned and processed dataset and converting to csv
+write.csv(data_no_NA, file= "Daily_Fitbit_Cleaned_ProcessedData.csv")
+
+#################################################################
+##                                                              #
+## Creating varible summary table.                              #
+##                                                              #
+#################################################################
+
+
+# Creating and displaying the summary table
+name <- c("HRV", "SpO2", "Sleep Points Percentage", "Exertion Points Percentage", "Calories", "Gender")
+mean1 <- c(mean(data_no_NA$rmssd),mean(data_no_NA$spo2), mean(data_no_NA$sleep_points_percentage), mean(data_no_NA$exertion_points_percentage), mean(data_no_NA$calories), mean(data_no_NA$gender))
+med1 <- c(median(data_no_NA$rmssd),median(data_no_NA$spo2), median(data_no_NA$sleep_points_percentage), median(data_no_NA$exertion_points_percentage), median(data_no_NA$calories), median(data_no_NA$gender))
+mod1 <- c(mode(data_no_NA$rmssd),mode(data_no_NA$spo2), mode(data_no_NA$sleep_points_percentage), mode(data_no_NA$exertion_points_percentage), mode(data_no_NA$calories), mode(data_no_NA$gender))
+var1 <-c(var(data_no_NA$rmssd),var(data_no_NA$spo2), var(data_no_NA$sleep_points_percentage), var(data_no_NA$exertion_points_percentage), var(data_no_NA$calories), var(data_no_NA$gender))
+
+summary_table <- data.frame(name, mean1, med1, mod1, var1)
+
+# Displaying a summary table
+summary_table
+
+length(data_no_NA$gender)
+
+#################################################################
+##                                                              #
+##                                                              #
+## Model 1 --> Initial model fit                                #
+##                                                              #
+##                                                              #
+#################################################################
+
+#fitting the model with Heart Rate Variability as mean response and 5 predictors
+model1 <- lm(rmssd~spo2+sleep_points_percentage+exertion_points_percentage+calories+gender, data=data_no_NA)
+summary(model1)
+
+checkAssumptions(model1, c(1:6))
+
+plotColorResiduals(model1)
+
+
+#################################################################
+##                                                              #
+##                                                              #
+## Model B --> Fitting interacting terms                        #
+##                                                              #
+##                                                              #
+#################################################################
+
+model_B <- lm(rmssd~spo2+sleep_points_percentage+exertion_points_percentage+exertion_points_percentage*gender+calories+calories*gender+gender, data=data_no_NA)
+summary(model_B)
+
+checkAssumptions(model_B, c(1:6))
+
+###   Performing Log-likelihood Calculation on the Response   ###
+
+boxcox(model_B)
+boxcox(model1) 
+
+data_no_NA$sqrt_rmssd <- sqrt(data_no_NA$rmssd)
+
+
+#################################################################
+##                                                              #
+##                                                              #
+## Model C --> Fitting model with response transformation       #
+##             from log-likelihood function.                    #
+##                                                              #
+#################################################################
+
+
+model_C <- lm(sqrt_rmssd~spo2+sleep_points_percentage+exertion_points_percentage+calories+gender, data=data_no_NA)
+summary(model_C)
+
+checkAssumptions(model_C, c(2:7))
+
+
+###   Performing Power Transform on the Continuous Predictors and Response   ###
+
+frame <- (cbind(rmssd=data_no_NA$rmssd, sleep_points_percentage=data_no_NA$sleep_points_percentage,exertion_points_percentage= data_no_NA$exertion_points_percentage, gender=data_no_NA$gender, calories=(data_no_NA$calories), spo2=data_no_NA$spo2))
+
+p <- powerTransform(frame[, cbind(1,2,3,5,6)])
+summary(p)
+
+data_no_NA$calories_66 <- (data_no_NA$calories)^(2/3)
+data_no_NA$spo2_12 <- (data_no_NA$spo2)^12
+
+
+#################################################################
+##                                                              #
+##                                                              #
+## Model 'A' --> Power-transformed terms.                       #
+##                                                              #
+##                                                              #
+#################################################################
+
+
+model_A <- lm((sqrt_rmssd) ~spo2_12+sleep_points_percentage+calories_66+gender+exertion_points_percentage, data = data_no_NA)
+summary(model_A)
+
+checkAssumptions(model_A, cbind(7, 2,3,4,8,9))
+
+
+#################################################################
+##                                                              #
+##                                                              #
+## Model 'D' --> Power-transformed terms without transforming   #
+##               SpO2 ^ 12.                                     #
+##                                                              #
+#################################################################
+
+
+model_D <- lm((sqrt_rmssd) ~spo2+sleep_points_percentage+calories_66+gender+exertion_points_percentage, data = data_no_NA)
+summary(model_D)
+
+checkAssumptions(model_D,  cbind(7,2,3,4,8,6))
+
+#obtaining the critical t-value for model D and checking significance
+qt(0.025,682,lower.tail=FALSE)
+summary(model_D)
+
+confint(model_D)
+#predict(model_D, data=data_no_NA, interval=prediction, level=0.95)
+
+#obtaining the critical f-value for model D and checking signficance
+qf(0.95, 5, 682)
+
+#Creating new models with reduced predictors to obtain optimized model
+#With no sleep_percentage_points
+model_E <- lm((sqrt_rmssd) ~spo2+gender+calories_66+exertion_points_percentage, data = data_no_NA)
+summary(model_E)
+
+anova(model_E, model_D)
+qf(0.95,4,682)
+
+# F_stat less than crit_F and all relevant predictors significant,
+# therefore we  choose this model.
+
+# With no gender, sleep_percentage_points
+model_F <- lm((sqrt_rmssd) ~spo2+calories_66+exertion_points_percentage, data = data_no_NA)
+summary(model_F)
+
+anova(model_F, model_D)
+qf(0.95,3,682)
+
+# F_stat not less than crit_F and all relevant predictors significant, 
+# therefore we do not choose this model
+
+#Checking if it helps to remove SpO2
+model_G <- lm((sqrt_rmssd) ~gender+calories_66+exertion_points_percentage, data = data_no_NA)
+summary(model_G)
+
+anova(model_G, model_D)
+qf(0.95,3,682)
+
+#It doesn't help much if at all, don't choose
+checkAssumptions(model_E, cbind(3,4,6,7,8))
+
+
+# Calculating correlation matrix for our selelcted model.
+frame.df <- as.data.frame(data_no_NA)
+cor(frame.df[,c(3:4,6:8)])
+
+# Calculating variance inflation factor for our selelcted model.
+vif(model_E)
+
+
+
+
+y_hat <- fitted(model_E) ## Switching Fitted values to selected model
+e_hat <- resid(model_E) ## Switching Residual values to selected model
+
+# Checking model outliers, leverage points, and points with high influence.
+
+# Determining the influence of each point by 1) Difference in Betas (DFBETAS),  2) Cook's Distance, 3) Difference in Fits (DFFITS)
+
+
+
+# 1) DFBETAS
+
+dfbetas <- dfbetas(model_E)
+dimensions <- dim(dfbetas)
+n <- dimensions[1]
+p_plus_1 <- dimensions[2]
+
+cutoff_dfbetas <- 2 / sqrt(n)
+
+intercept_DFBETAS <- which(abs(dfbetas[,1])>cutoff_dfbetas)
+intercept_DFBETAS
+
+epp_DFBETAS <- which(abs(dfbetas[,2])>cutoff_dfbetas)
+epp_DFBETAS
+
+gender_DFBETAS  <- which(abs(dfbetas[,3])>cutoff_dfbetas)
+gender_DFBETAS
+
+spo2_DFBETAS <-which(abs(dfbetas[,4])>cutoff_dfbetas)
+spo2_DFBETAS
+
+calories_66_DFBETAS <- which(abs(dfbetas[,5])>cutoff_dfbetas)
+calories_66_DFBETAS
+
+which(max(abs(dfbetas[,5])) ==abs(dfbetas[,5]))
+
+
+# 2) Cooks Distance
+di <- cooks.distance(model_E)
+cutoff_di <- qf(0.5,p_plus_1,n-(p_plus_1))
+cooks_dist <- which(di > cutoff_di)
+
+# 3) DFFITS
+
+dffits <- dffits(model_E)
+cutoff_dffits <- 2*sqrt(p_plus_1/n)
+dffits_points<-which(abs(dffits) > cutoff_dffits)
+
+
+
+# Determine Leverage: Calculating diagonal hat matrix values
+
+hii <- hatvalues(model_E)
+cutoff_hii <- 2*(p_plus_1)/n
+cutoff_hii
+# Finding which points do not make the cutoff for leverage.
+leverage_points <- which(hii > cutoff_hii)
+
+# Determining Outliers
+ri <- rstandard(model_E)
+
+## Dataset is large, therefore we have an expanded allowable range for outliers
+outliers <- which(ri > 4 | ri < -4)
+
+# There are no outliers
+outliers
+
+
+## Plotting the size of the point based on the violation present
+
+
+par(mfrow=c(2,2))
+
+
+# Plotting by Influence - DFFITS
+plot(x = 1,
+     type = "n",
+     xlim = c(2, 11), 
+     ylim = c(2,11),
+     pch = 16,
+     xlab = "sqrt(RMSSD)", 
+     ylab = "Y Hat",
+     main = "Residuals vs sqrt(RMSSD) Sized by DFFITS")
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("black",.4),
+       cex = 1
+)
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("Orange",.8),
+       cex = abs(dffits)* 10
+)
+text("A)", x =2, y = 10.5)
+abline(0,1)
+
+# Plotting by Influence - DFBETAS
+dfbetas
+plot(x = 1,
+     type = "n",
+     xlim = c(2, 11), 
+     ylim = c(2,11),
+     pch = 16,
+     xlab = "sqrt(RMSSD)", 
+     ylab = "Y Hat",
+     main = "Residuals vs sqrt(RMSSD) Sized by DFBETAS")
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("black",.4),
+       cex = 1
+)
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("Blue",.8),
+       cex = dfbetas* 20
+)
+text("B)", x =2, y = 10.5)
+abline(0,1)
+
+# Plotting by Influence - Cooks Distance
+plot(x = 1,
+     type = "n",
+     xlim = c(2, 11), 
+     ylim = c(2,11),
+     pch = 16,
+     xlab = "sqrt(RMSSD)", 
+     ylab = "Y Hat",
+     main = "Residuals vs sqrt(RMSSD) Sized by Cooks Distance")
+
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("black",.4),
+       cex = 1
+)
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("coral2",1),
+       cex =  abs(di)*50
+)
+text("C)", x =2, y = 10.5)
+abline(0,1)
+
+
+
+# Plotting by leverage - Measure: hii
+plot(x = 1,
+     type = "n",
+     xlim = c(2, 11), 
+     ylim = c(2,11),
+     pch = 16,
+     xlab = "sqrt(RMSSD)", 
+     ylab = "Residuals",
+     main = "Residuals vs sqrt(RMSSD) Sized by hii",
+     sub="Leverage Point Identification")
+
+
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("black",.4),
+       cex =    abs(hii)*100
+)
+
+abline(0,1)
+
+text("D)", x =2, y = 10.5)
+# Plotting for Outliers - ri
+plot(x = 1,
+     type = "n",
+     xlim = c(2, 11), 
+     ylim = c(2,11),
+     pch = 16,
+     xlab = "sqrt(RMSSD)", 
+     ylab = "Y Hat",
+     main = "Residuals vs RMSSD Sized by ri",
+     sub = "Outlier Identification")
+
+
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("black",.4),
+       cex = 1
+)
+points(x = data_no_NA$sqrt_rmssd,
+       y = y_hat,
+       pch = 16,
+       col =  alpha("red",1),
+       cex =  abs(ri)*0.6
+)
+abline(0,1)
+
+
+
+## Adjusted dataset -> Removing High-Influence Points
+adjusted_data_set <- data.frame(frame[- c(109),])
+
+
+summary(adjusted_data_set)
+
+
+model_removed_values <- lm( rmssd ~ spo2 + sleep_points_percentage + exertion_points_percentage + gender + calories, data =adjusted_data_set )
+summary(model_removed_values)
+
+
+
+#Module 9
+#getting the best subsets
+install.packages("leaps")
+library(leaps)
+
+best <- regsubsets((sqrt_rmssd) ~spo2+gender+calories_66+exertion_points_percentage, data = data_no_NA, nbest = 1, nvmax=4)
+summary(best)
+#plotting subsets
+library(car)
+
+subsets(best, statistic = "adjr2", legend=FALSE)
+
+#forward selection
+library(MASS)
+stepAIC(lm(sqrt_rmssd ~ 1, data=frame.df[,c(3:4,6:8)]),
+        scope=list(upper=lm(sqrt_rmssd ~ ., data=frame.df[,c(3:4,6:8)])),
+        direction = "forward", k=4)
+
+#backward selection
+library(MASS)
+stepAIC(lm(sqrt_rmssd ~ ., data=frame.df[,c(3:4,6:8)]),
+        scope=list(lower=lm(sqrt_rmssd ~ 1, data=frame.df[,c(3:4,6:8)])),
+        direction = "backward", k=4)
+
+#stepwise selection
+library(MASS)
+stepAIC(lm(sqrt_rmssd ~ ., data=frame.df[,c(3:4,6:8)]),
+        direction = "both", k=4)
+
